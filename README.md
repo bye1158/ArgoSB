@@ -18,7 +18,7 @@
 
 
 Claw Cloud     
-镜像名称：jackrun123/sb-tunnel      端口 2323    UUID=     TUNNEL_TOKEN=             TUNNEL_DOMAIN=
+镜像名称：jackrun123/sb-tunnel、、端口 2323、、UUID=、、TUNNEL_TOKEN=、、TUNNEL_DOMAIN=
 ----------------------------------------------------------
 
 ### 一、自定义变量参数说明：
