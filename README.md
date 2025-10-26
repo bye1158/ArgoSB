@@ -66,6 +66,30 @@ vlpt="" vmpt="" hypt="" tupt="" argo="y" agn="" agk="" bash <(curl -Ls https://r
 vmpt="" argo="y" agn="" agk="" bash <(curl -Ls https://raw.githubusercontent.com/bye1158/argosb/main/argosb.sh)
 ```
 
+# 修复方法agsb无效
+
+重新下载正确的文件
+确认你最初的下载命令，比如：
+```
+wget -O /root/bin/agsb https://raw.githubusercontent.com/bye1158/argosb/main/argosb.sh
+```
+
+确保这个链接 真实存在且能访问。你可以在浏览器中打开看看是否返回脚本而不是网页。
+
+赋予执行权限
+重新下载后：
+```
+chmod +x /root/bin/agsb
+```
+
+测试执行
+```
+/root/bin/agsb --version
+```
+
+或者直接运行看看是否正常。
+
+
 3：单协议，主流UPD协议或者TCP协议单独运行
 
 hy2为例：以下脚本启用hy2变量hypt，其他协议变量参考变量参数说明
