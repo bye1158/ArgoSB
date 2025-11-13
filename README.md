@@ -63,10 +63,10 @@ vlpt="" vmpt="" hypt="" tupt="" argo="y" agn="" agk="" bash <(curl -Ls https://r
 类似无公网的【IDX Google VPS】容器推荐使用此脚本，快速一键内网穿透获取节点
 
 ```
-vmpt="" argo="y" agn="" agk="" bash <(curl -Ls https://raw.githubusercontent.com/bye1158/argosb/main/argosb.sh)
+uuid="" vmpt="" argo="y" agn="" agk="" bash <(curl -Ls https://raw.githubusercontent.com/bye1158/argosb/main/argosb.sh)
 ```
 ```
-vmpt="" argo="y" agn="" agk="" bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosbx/main/argosbx.sh)
+uuid="" vmpt="" argo="y" agn="" agk="" bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosbx/main/argosbx.sh)
 ```
 
 # 修复agsb 404
