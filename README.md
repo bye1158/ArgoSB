@@ -68,45 +68,8 @@ uuid="" vmpt="" argo="y" agn="" agk="" bash <(curl -Ls https://raw.githubusercon
 ```
 uuid="" vmpt="" argo="y" agn="" agk="" bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosbx/main/argosbx.sh)
 ```
-
-# 修复agsb 404
-
-重新下载正确的文件
-确认你最初的下载命令，比如：
 ```
-wget -O /root/bin/agsb https://raw.githubusercontent.com/bye1158/argosb/main/argosb.sh
-```
-
-确保这个链接 真实存在且能访问。你可以在浏览器中打开看看是否返回脚本而不是网页。
-
-赋予执行权限
-重新下载后：
-```
-chmod +x /root/bin/agsb
-```
-
-测试执行
-```
-/root/bin/agsb --version
-```
-
-# 修复agsb无效
-
-全局 PATH 设置
-```
-mkdir -p /etc/profile.d
-echo 'export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/bin' > /etc/profile.d/custom_path.sh
-chmod +x /etc/profile.d/custom_path.sh
-```
-
-立即生效
-```
-source /etc/profile
-```
-
-一键命令
-```
-chmod +x /root/bin/agsb && mkdir -p /etc/profile.d && echo 'export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/bin' > /etc/profile.d/custom_path.sh && chmod +x /etc/profile.d/custom_path.sh && source /etc/profile
+sopt="" bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosbx/main/argosbx.sh)
 ```
 
 3：单协议，主流UPD协议或者TCP协议单独运行
