@@ -74,11 +74,8 @@ sopt="" bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosbx/main
 
 3：单协议，主流UPD协议或者TCP协议单独运行
 
-hy2为例：以下脚本启用hy2变量hypt，其他协议变量参考变量参数说明
+socks5为例：以下脚本启用hy2变量hypt，其他协议变量参考变量参数说明
 
-```
-hypt="" bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosb/main/argosb.sh)
-```
 ```
 sopt="" bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosbx/main/argosbx.sh)
 ```
