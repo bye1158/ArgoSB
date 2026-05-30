@@ -61,21 +61,17 @@ vlpt="" vmpt="" hypt="" tupt="" argo="y" agn="" agk="" bash <(curl -Ls https://r
 2：仅argo临时隧道，固定隧道必须填写端口(vmpt)、域名(agn)、token(agk)
 
 类似无公网的【IDX Google VPS】容器推荐使用此脚本，快速一键内网穿透获取节点
-
+vless
 ```
-uuid="" vmpt="8001" argo="y" agn="" agk="" bash <(curl -Ls https://raw.githubusercontent.com/bye1158/argosb/main/argosb.sh)
+uuid="" vwpt="8001" argo="vwpt" agn="" agk="" bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosbx/main/argosbx.sh)
 ```
+vmess
 ```
 uuid="" vmpt="8001" argo="y" agn="" agk="" bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosbx/main/argosbx.sh)
 ```
-```
-sopt="" bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosbx/main/argosbx.sh)
-```
 
 3：单协议，主流UPD协议或者TCP协议单独运行
-
 socks5为例：以下脚本启用hy2变量hypt，其他协议变量参考变量参数说明
-
 ```
 sopt="" bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosbx/main/argosbx.sh)
 ```
