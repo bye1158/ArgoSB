@@ -89,7 +89,7 @@ sopt="" bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosbx/main
 
 显示IPV4节点配置：
 
-```ip=4 agsb list```或者```ip=4 bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosb/main/argosb.sh) list```
+```ip=4 agsb list```或者```ip=4 bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosbx/main/argosbx.sh) list```
 
 显示IPV6节点配置：
 
@@ -97,7 +97,7 @@ sopt="" bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosbx/main
 
  3、卸载脚本：
 
-```agsb del``` 或者 ```bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosb/main/argosb.sh) del```
+```agsb del``` 或者 ```bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosbx/main/argosbx.sh) del```
 
 ----------------------------------------------------------
 
