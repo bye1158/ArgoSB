@@ -480,23 +480,20 @@ argodomain=$(cat "$HOME/agsb/sbargoym.log" 2>/dev/null)
 if [ -n "$argodomain" ]; then
   # 优先针对 VMess，若无则使用 VLESS 生成 Argo 节点
   if [ -f "$HOME/agsb/port_vm_ws" ]; then
-    vmatls_link1="vmess://$(echo "{ \"v\": \"2\", \"ps\": \"vmess-ws-tls-argo-$hostname-443\", \"add\": \"104.16.0.0\", \"port\": \"443\", \"id\": \"$uuid\", \"aid\": \"0\", \"scy\": \"auto\", \"net\": \"ws\", \"type\": \"none\", \"host\": \"$argodomain\", \"path\": \"/$uuid-vm?ed=2048\", \"tls\": \"tls\", \"sni\": \"$argodomain\", \"alpn\": \"\", \"fp\": \"\"}" | base64 -w0)"
-    vma_link7="vmess://$(echo "{ \"v\": \"2\", \"ps\": \"vmess-ws-argo-$hostname-80\", \"add\": \"104.21.0.0\", \"port\": \"80\", \"id\": \"$uuid\", \"aid\": \"0\", \"scy\": \"auto\", \"net\": \"ws\", \"type\": \"none\", \"host\": \"$argodomain\", \"path\": \"/$uuid-vm?ed=2048\", \"tls\": \"\"}" | base64 -w0)"
+    vmatls_link1="vmess://$(echo "{ \"v\": \"2\", \"ps\": \"vmess-ws-tls-argo-$hostname-443\", \"add\": \"jp.pcc.pp.ua\", \"port\": \"443\", \"id\": \"$uuid\", \"aid\": \"0\", \"scy\": \"auto\", \"net\": \"ws\", \"type\": \"none\", \"host\": \"$argodomain\", \"path\": \"/$uuid-vm?ed=2048\", \"tls\": \"tls\", \"sni\": \"$argodomain\", \"alpn\": \"\", \"fp\": \"chrome\"}" | base64 -w0)"
     proto_label="Vmess"
   elif [ -f "$HOME/agsb/port_vws" ]; then
-    vmatls_link1="vless://$uuid@104.16.0.0:443?type=ws&security=tls&sni=$argodomain&host=$argodomain&path=%2F$uuid-vws%3Fed%3D2048#vless-ws-tls-argo-$hostname-443"
-    vma_link7="vless://$uuid@104.21.0.0:80?type=ws&security=none&host=$argodomain&path=%2F$uuid-vws%3Fed%3D2048#vless-ws-argo-$hostname-80"
+    vmatls_link1="vless://$uuid@jp.pcc.pp.ua:443?type=ws&security=tls&sni=$argodomain&host=$argodomain&path=%2F$uuid-vws%3Fed%3D2048&fp=chrome#vless-ws-tls-argo-$hostname-443"
     proto_label="Vless"
   fi
 
   echo "$vmatls_link1" >> "$HOME/agsb/jh.txt"
-  echo "$vma_link7" >> "$HOME/agsb/jh.txt"
 
   sbtk=$(cat "$HOME/agsb/sbargotoken.log" 2>/dev/null)
   if [ -n "$sbtk" ]; then
     nametn="当前Argo固定隧道token：$sbtk"
   fi
-  argoshow=$(echo "Argo隧道转发本地端口：${argo_port}\n当前Argo$name域名：$argodomain\n$nametn\n1、443端口的${proto_label}-ws-tls-argo节点\n$vmatls_link1\n\n2、80端口的${proto_label}-ws-argo节点\n$vma_link7\n")
+  argoshow=$(echo "Argo隧道转发本地端口：${argo_port}\n当前Argo$name域名：$argodomain\n$nametn\n443端口的${proto_label}-ws-tls-argo节点：\n$vmatls_link1\n")
 fi
 echo "---------------------------------------------------------"
 echo -e "$argoshow"
