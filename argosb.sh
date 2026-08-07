@@ -3,13 +3,15 @@ export LANG=en_US.UTF-8
 if ! find /proc/*/exe -type l 2>/dev/null | grep -E '/proc/[0-9]+/exe' | xargs -r readlink 2>/dev/null | grep -q 'agsb/s' && ! pgrep -f 'agsb/s' >/dev/null 2>&1; then
 [ -z "${vlpt+x}" ] || vlp=yes
 [ -z "${vmpt+x}" ] || vmp=yes
+[ -z "${vwspt+x}" ] || vwsp=yes
 [ -z "${hypt+x}" ] || hyp=yes
 [ -z "${tupt+x}" ] || tup=yes
-[ "$vlp" = yes ] || [ "$vmp" = yes ] || [ "$hyp" = yes ] || [ "$tup" = yes ] || { echo "提示：使用此脚本时，请在脚本前至少设置一个协议变量哦，再见！"; exit; }
+[ "$vlp" = yes ] || [ "$vmp" = yes ] || [ "$vwsp" = yes ] || [ "$hyp" = yes ] || [ "$tup" = yes ] || { echo "提示：使用此脚本时，请在脚本前至少设置一个协议变量哦，再见！"; exit; }
 fi
 export uuid=${uuid:-''}
 export port_vl_re=${vlpt:-''}
 export port_vm_ws=${vmpt:-''}
+export port_vws=${vwspt:-''}
 export port_hy2=${hypt:-''}
 export port_tu=${tupt:-''}
 export ym_vl_re=${reym:-''}
@@ -160,6 +162,41 @@ EOF
 else
 vmp=vmptargo
 fi
+if [ -n "$vwsp" ]; then
+vwsp=vwspt
+if [ -z "$port_vws" ]; then
+port_vws=$(shuf -i 10000-65535 -n 1)
+fi
+echo "$port_vws" > "$HOME/agsb/port_vws"
+echo "Vless-ws端口：$port_vws"
+cat >> "$HOME/agsb/sb.json" <<EOF
+{
+        "type": "vless",
+        "tag": "vless-ws-sb",
+        "listen": "::",
+        "listen_port": ${port_vws},
+        "users": [
+            {
+                "uuid": "${uuid}"
+            }
+        ],
+        "transport": {
+            "type": "ws",
+            "path": "${uuid}-vws",
+            "max_early_data":2048,
+            "early_data_header_name": "Sec-WebSocket-Protocol"
+        },
+        "tls":{
+                "enabled": false,
+                "server_name": "www.bing.com",
+                "certificate_path": "$HOME/agsb/cert.pem",
+                "key_path": "$HOME/agsb/private.key"
+            }
+    },
+EOF
+else
+vwsp=vwsptargo
+fi
 if [ -n "$hyp" ]; then
 hyp=hypt
 if [ -z "$port_hy2" ]; then
@@ -299,7 +336,7 @@ fi
 if find /proc/*/exe -type l 2>/dev/null | grep -E '/proc/[0-9]+/exe' | xargs -r readlink 2>/dev/null | grep -q 'agsb/s' || pgrep -f 'agsb/s' >/dev/null 2>&1 ; then
 [ -f ~/.bashrc ] || touch ~/.bashrc
 sed -i '/yonggekkk/d' ~/.bashrc
-echo "if ! find /proc/*/exe -type l 2>/dev/null | grep -E '/proc/[0-9]+/exe' | xargs -r readlink 2>/dev/null | grep -q 'agsb/s' && ! pgrep -f 'agsb/s' >/dev/null 2>&1; then export ip=\"${ipsw}\" argo=\"${argo}\" uuid=\"${uuid}\" $vlp=\"${port_vl_re}\" $vmp=\"${port_vm_ws}\" $hyp=\"${port_hy2}\" $tup=\"${port_tu}\" reym=\"${ym_vl_re}\" agn=\"${ARGO_DOMAIN}\" agk=\"${ARGO_AUTH}\"; sh <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosb/main/argosb.sh); fi" >> ~/.bashrc
+echo "if ! find /proc/*/exe -type l 2>/dev/null | grep -E '/proc/[0-9]+/exe' | xargs -r readlink 2>/dev/null | grep -q 'agsb/s' && ! pgrep -f 'agsb/s' >/dev/null 2>&1; then export ip=\"${ipsw}\" argo=\"${argo}\" uuid=\"${uuid}\" $vlp=\"${port_vl_re}\" $vmp=\"${port_vm_ws}\" $vwsp=\"${port_vws}\" $hyp=\"${port_hy2}\" $tup=\"${port_tu}\" reym=\"${ym_vl_re}\" agn=\"${ARGO_DOMAIN}\" agk=\"${ARGO_AUTH}\"; sh <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosb/main/argosb.sh); fi" >> ~/.bashrc
 COMMAND="agsb"
 SCRIPT_PATH="$HOME/bin/$COMMAND"
 mkdir -p "$HOME/bin"
@@ -410,6 +447,14 @@ echo "$vm_link" >> "$HOME/agsb/jh.txt"
 echo "$vm_link"
 echo
 fi
+if [ -f "$HOME/agsb/port_vws" ]; then
+echo "【 vless-ws 】节点信息如下："
+port_vws=$(cat "$HOME/agsb/port_vws")
+vws_link="vless://$uuid@$server_ip:$port_vws?type=ws&security=none&path=%2F$uuid-vws%3Fed%3D2048&host=www.bing.com#vws-$hostname"
+echo "$vws_link" >> "$HOME/agsb/jh.txt"
+echo "$vws_link"
+echo
+fi
 if [ -f "$HOME/agsb/port_hy2" ]; then
 echo "【 Hysteria2 】节点信息如下："
 port_hy2=$(cat "$HOME/agsb/port_hy2")
@@ -461,7 +506,7 @@ nametn="当前Argo固定隧道token：$sbtk"
 fi
 argoshow=$(echo "Vmess主协议端口(Argo固定隧道端口)：$port_vm_ws\n当前Argo$name域名：$argodomain\n$nametn\n1、443端口的vmess-ws-tls-argo节点\n$vmatls_link1\n\n2、80端口的vmess-ws-argo节点\n$vma_link7\n")
 fi
-echo "---------------------------------------------------------"
+echo "----------------------------------------------------------------- "
 echo -e "$argoshow"
 echo "---------------------------------------------------------"
 echo "聚合节点信息，请查看$HOME/agsb/jh.txt文件或者运行cat $HOME/agsb/jh.txt进行复制"
