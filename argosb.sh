@@ -124,30 +124,6 @@ EOF
 else
 vlp=vlptargo
 fi
-
-echo "$port_vl_ws" > "$HOME/agsb/port_vl_ws"
-echo "Vless-ws端口：$port_vl_ws"
-
-cat >> "$HOME/agsb/sb.json" <<EOF
-{
-  "type": "vless",
-  "tag": "vless-ws-sb",
-  "listen": "::",
-  "listen_port": ${port_vl_ws},
-  "users": [
-    {
-      "uuid": "${uuid}"
-    }
-  ],
-  "transport": {
-    "type": "ws",
-    "path": "/${uuid}"
-  }
-},
-EOF
-
-fi
-
 if [ -n "$vmp" ]; then
 vmp=vmpt
 if [ -z "$port_vm_ws" ]; then
@@ -566,78 +542,4 @@ echo "ArgoSB脚本已安装"
 echo "相关快捷方式如下："
 showmode
 exit
-fi
-
-
-# ==============================
-# VLESS WS addon for original ArgoSB
-# Enable: vlw=1
-# Uses original sing-box/xray/cloudflared installer
-# ==============================
-
-if [ -n "$vlw" ]; then
-
-vlw=vlwt
-
-if [ -z "$port_vl_ws" ]; then
-    port_vl_ws=$(shuf -i 10000-65535 -n 1)
-fi
-
-echo "$port_vl_ws" > "$HOME/agsb/port_vl_ws"
-
-echo "VLESS-WS端口：$port_vl_ws"
-
-# sing-box uses the original installed binary
-if [ -f "$HOME/agsb/sing-box" ]; then
-
-cat >> "$HOME/agsb/sb.json" <<EOF
-{
-  "type": "vless",
-  "tag": "vless-ws",
-  "listen": "::",
-  "listen_port": ${port_vl_ws},
-  "users": [
-    {
-      "uuid": "${uuid}"
-    }
-  ],
-  "transport": {
-    "type": "ws",
-    "path": "/${uuid}"
-  }
-},
-EOF
-
-fi
-
-# xray backend uses original xray binary if enabled
-if [ -f "$HOME/agsb/xray" ]; then
-
-cat > "$HOME/agsb/vlws-xray.json" <<EOF
-{
- "inbounds":[
-  {
-   "port":${port_vl_ws},
-   "protocol":"vless",
-   "settings":{
-    "clients":[
-     {
-      "id":"${uuid}"
-     }
-    ],
-    "decryption":"none"
-   },
-   "streamSettings":{
-    "network":"ws",
-    "wsSettings":{
-     "path":"/${uuid}"
-    }
-   }
-  }
- ]
-}
-EOF
-
-fi
-
 fi
