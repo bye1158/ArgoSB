@@ -124,6 +124,41 @@ EOF
 else
 vlp=vlptargo
 fi
+
+# ==============================
+# VLESS WS module (new)
+# variable: vlw
+# ==============================
+if [ -n "$vlw" ]; then
+vlw=vlwt
+
+if [ -z "$port_vl_ws" ]; then
+    port_vl_ws=$(shuf -i 10000-65535 -n 1)
+fi
+
+echo "$port_vl_ws" > "$HOME/agsb/port_vl_ws"
+echo "Vless-ws端口：$port_vl_ws"
+
+cat >> "$HOME/agsb/sb.json" <<EOF
+{
+  "type": "vless",
+  "tag": "vless-ws-sb",
+  "listen": "::",
+  "listen_port": ${port_vl_ws},
+  "users": [
+    {
+      "uuid": "${uuid}"
+    }
+  ],
+  "transport": {
+    "type": "ws",
+    "path": "/${uuid}"
+  }
+},
+EOF
+
+fi
+
 if [ -n "$vmp" ]; then
 vmp=vmpt
 if [ -z "$port_vm_ws" ]; then
