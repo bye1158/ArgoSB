@@ -24,16 +24,17 @@
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1、启用vless-reality（TCP） | vlpt | 端口指定 | 关闭vless | 端口随机 | 必选之一 |
 | 2、启用vmess（TCP） | vmpt | 端口指定 | 关闭vmess | 端口随机 | 必选之一 |
-| 3、启用hy2（UDP） | hypt | 端口指定 | 关闭hy2 | 端口随机 | 必选之一 |
-| 4、启用tuic（UDP） | tupt | 端口指定 | 关闭tuic | 端口随机 | 必选之一 |
-| 5、argo开关 | argo | 填写y | 关闭argo隧道 | 关闭argo隧道 | 可选，填写y时，vmess变量vmpt必须启用 |
-| 6、argo固定域名 | agn | 解析在CF上的域名 | 使用临时隧道 | 使用临时隧道 | 可选，argo填写y才可激活固定/临时隧道|
-| 7、argo token | agk | CF获取的ey开头的token | 使用临时隧道 | 使用临时隧道 | 可选，argo填写y才可激活固定/临时隧道 |
-| 8、uuid密码 | uuid | 符合uuid规定格式 | 随机生成 | 随机生成 | 可选 |
-| 9、reality域名 | reym | 符合reality域名规定 | yahoo | yahoo | 可选 |
-| 10、切换ipv4或ipv6配置 | ip | 填写4或者6 | 自动识别IP配置 | 自动识别IP配置 | 可选，4表示IPV4配置输出，6表示IPV6配置输出 |
-| 11、【仅docker】监听端口，网页查询 | PORT | 端口指定 | 3000 | 3000 | 可选 |
-| 12、【仅docker】启用vless-ws-tls | DOMAIN | 服务器域名 | 关闭vless-ws-tls | 关闭vless-ws-tls | 可选，vless-ws-tls可独立存在，uuid变量必须启用 |
+| 3、启用vless（TCP） | vwspt | 端口指定 | 关闭vmess | 端口随机 | 必选之一 |
+| 4、启用hy2（UDP） | hypt | 端口指定 | 关闭hy2 | 端口随机 | 必选之一 |
+| 5、启用tuic（UDP） | tupt | 端口指定 | 关闭tuic | 端口随机 | 必选之一 |
+| 6、argo开关 | argo | 填写y | 关闭argo隧道 | 关闭argo隧道 | 可选，填写y时，vmess变量vmpt必须启用 |
+| 7、argo固定域名 | agn | 解析在CF上的域名 | 使用临时隧道 | 使用临时隧道 | 可选，argo填写y才可激活固定/临时隧道|
+| 8、argo token | agk | CF获取的ey开头的token | 使用临时隧道 | 使用临时隧道 | 可选，argo填写y才可激活固定/临时隧道 |
+| 9、uuid密码 | uuid | 符合uuid规定格式 | 随机生成 | 随机生成 | 可选 |
+| 10、reality域名 | reym | 符合reality域名规定 | yahoo | yahoo | 可选 |
+| 11、切换ipv4或ipv6配置 | ip | 填写4或者6 | 自动识别IP配置 | 自动识别IP配置 | 可选，4表示IPV4配置输出，6表示IPV6配置输出 |
+| 12、【仅docker】监听端口，网页查询 | PORT | 端口指定 | 3000 | 3000 | 可选 |
+| 13、【仅docker】启用vless-ws-tls | DOMAIN | 服务器域名 | 关闭vless-ws-tls | 关闭vless-ws-tls | 可选，vless-ws-tls可独立存在，uuid变量必须启用 |
 
 ![fdb76495fab11507148086c94d06453](https://github.com/user-attachments/assets/368cfe37-e215-4149-b6dd-4b295672a965)
 
@@ -61,6 +62,11 @@ vlpt="" vmpt="" hypt="" tupt="" argo="y" agn="" agk="" bash <(curl -Ls https://r
 2：仅argo临时隧道，固定隧道必须填写端口(vmpt)、域名(agn)、token(agk)
 
 类似无公网的【IDX Google VPS】容器推荐使用此脚本，快速一键内网穿透获取节点
+
+vless
+```
+uuid="" vwspt="8001" argo="y" agn="" agk="" bash <(curl -Ls https://raw.githubusercontent.com/bye1158/ArgoSB/main/argosb.sh)
+```
 
 vmess
 ```
@@ -94,6 +100,7 @@ sopt="" bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosbx/main
  3、卸载脚本：
 
 ```agsb del``` 或者 ```bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosbx/main/argosbx.sh) del```
+   或者```bash <(curl -Ls https://raw.githubusercontent.com/bye1158/ArgoSB/main/argosb.sh) del```  
 
 ----------------------------------------------------------
 
