@@ -4,14 +4,16 @@ if ! find /proc/*/exe -type l 2>/dev/null | grep -E '/proc/[0-9]+/exe' | xargs -
 [ -z "${vlpt+x}" ] || vlp=yes
 [ -z "${vmpt+x}" ] || vmp=yes
 [ -z "${vwspt+x}" ] || vwsp=yes
+[ -z "${sspt+x}" ] || ssp=yes
 [ -z "${hypt+x}" ] || hyp=yes
 [ -z "${tupt+x}" ] || tup=yes
-[ "$vlp" = yes ] || [ "$vmp" = yes ] || [ "$vwsp" = yes ] || [ "$hyp" = yes ] || [ "$tup" = yes ] || { echo "提示：使用此脚本时，请在脚本前至少设置一个协议变量哦，再见！"; exit; }
+[ "$vlp" = yes ] || [ "$vmp" = yes ] || [ "$vwsp" = yes ] || [ "$ssp" = yes ] || [ "$hyp" = yes ] || [ "$tup" = yes ] || { echo "提示：使用此脚本时，请在脚本前至少设置一个协议变量哦，再见！"; exit; }
 fi
 export uuid=${uuid:-''}
 export port_vl_re=${vlpt:-''}
 export port_vm_ws=${vmpt:-''}
 export port_vws=${vwspt:-''}
+export port_ss=${sspt:-''}
 export port_hy2=${hypt:-''}
 export port_tu=${tupt:-''}
 export ym_vl_re=${reym:-''}
@@ -197,6 +199,32 @@ EOF
 else
 vwsp=vwsptargo
 fi
+if [ -n "$ssp" ]; then
+ssp=sspt
+if [ -z "$port_ss" ]; then
+port_ss=$(shuf -i 10000-65535 -n 1)
+fi
+echo "$port_ss" > "$HOME/agsb/port_ss"
+echo "Shadowsocks-ws端口：$port_ss"
+cat >> "$HOME/agsb/sb.json" <<EOF
+{
+        "type": "shadowsocks",
+        "tag": "ss-ws-sb",
+        "listen": "::",
+        "listen_port": ${port_ss},
+        "method": "2022-blake3-aes-128-gcm",
+        "password": "${uuid}",
+        "transport": {
+            "type": "ws",
+            "path": "${uuid}-ss",
+            "max_early_data":2048,
+            "early_data_header_name": "Sec-WebSocket-Protocol"
+        }
+    },
+EOF
+else
+ssp=ssptargo
+fi
 if [ -n "$hyp" ]; then
 hyp=hypt
 if [ -z "$port_hy2" ]; then
@@ -311,8 +339,14 @@ curl -Lo "$HOME/agsb/cloudflared" -# --retry 2 https://github.com/cloudflare/clo
 chmod +x "$HOME/agsb/cloudflared"
 fi
 
-# 计算 Argo 实际绑定的本地端口（优先 VMess，其次 VLESS）
-argo_port="${port_vm_ws:-$port_vws}"
+# 计算 Argo 实际绑定的本地端口（优先 VMess，其次 VLESS，最后 SS）
+if [ -n "${port_vm_ws}" ]; then
+  argo_port="${port_vm_ws}"
+elif [ -n "${port_vws}" ]; then
+  argo_port="${port_vws}"
+else
+  argo_port="${port_ss}"
+fi
 
 if [ -n "${ARGO_DOMAIN}" ] && [ -n "${ARGO_AUTH}" ]; then
 name='固定'
@@ -340,7 +374,7 @@ fi
 if find /proc/*/exe -type l 2>/dev/null | grep -E '/proc/[0-9]+/exe' | xargs -r readlink 2>/dev/null | grep -q 'agsb/s' || pgrep -f 'agsb/s' >/dev/null 2>&1 ; then
 [ -f ~/.bashrc ] || touch ~/.bashrc
 sed -i '/yonggekkk/d' ~/.bashrc
-echo "if ! find /proc/*/exe -type l 2>/dev/null | grep -E '/proc/[0-9]+/exe' | xargs -r readlink 2>/dev/null | grep -q 'agsb/s' && ! pgrep -f 'agsb/s' >/dev/null 2>&1; then export ip=\"${ipsw}\" argo=\"${argo}\" uuid=\"${uuid}\" $vlp=\"${port_vl_re}\" $vmp=\"${port_vm_ws}\" $vwsp=\"${port_vws}\" $hyp=\"${port_hy2}\" $tup=\"${port_tu}\" reym=\"${ym_vl_re}\" agn=\"${ARGO_DOMAIN}\" agk=\"${ARGO_AUTH}\"; sh <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosb/main/argosb.sh); fi" >> ~/.bashrc
+echo "if ! find /proc/*/exe -type l 2>/dev/null | grep -E '/proc/[0-9]+/exe' | xargs -r readlink 2>/dev/null | grep -q 'agsb/s' && ! pgrep -f 'agsb/s' >/dev/null 2>&1; then export ip=\"${ipsw}\" argo=\"${argo}\" uuid=\"${uuid}\" $vlp=\"${port_vl_re}\" $vmp=\"${port_vm_ws}\" $vwsp=\"${port_vws}\" $ssp=\"${port_ss}\" $hyp=\"${port_hy2}\" $tup=\"${port_tu}\" reym=\"${ym_vl_re}\" agn=\"${ARGO_DOMAIN}\" agk=\"${ARGO_AUTH}\"; sh <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosb/main/argosb.sh); fi" >> ~/.bashrc
 COMMAND="agsb"
 SCRIPT_PATH="$HOME/bin/$COMMAND"
 mkdir -p "$HOME/bin"
@@ -459,6 +493,16 @@ echo "$vws_link" >> "$HOME/agsb/jh.txt"
 echo "$vws_link"
 echo
 fi
+if [ -f "$HOME/agsb/port_ss" ]; then
+echo "【 shadowsocks-ws 】节点信息如下："
+port_ss=$(cat "$HOME/agsb/port_ss")
+ss_raw="2022-blake3-aes-128-gcm:$uuid@$server_ip:$port_ss"
+ss_base64=$(echo -n "$ss_raw" | base64 -w0)
+ss_link="ss://$ss_base64?type=ws&host=www.bing.com&path=%2F$uuid-ss%3Fed%3D2048#ss-ws-$hostname"
+echo "$ss_link" >> "$HOME/agsb/jh.txt"
+echo "$ss_link"
+echo
+fi
 if [ -f "$HOME/agsb/port_hy2" ]; then
 echo "【 Hysteria2 】节点信息如下："
 port_hy2=$(cat "$HOME/agsb/port_hy2")
@@ -478,13 +522,17 @@ fi
 argodomain=$(cat "$HOME/agsb/sbargoym.log" 2>/dev/null)
 [ -z "$argodomain" ] && argodomain=$(grep -a trycloudflare.com "$HOME/agsb/argo.log" 2>/dev/null | awk 'NR==2{print}' | awk -F// '{print $2}' | awk '{print $1}')
 if [ -n "$argodomain" ]; then
-  # 优先针对 VMess，若无则使用 VLESS 生成 Argo 节点
   if [ -f "$HOME/agsb/port_vm_ws" ]; then
     vmatls_link1="vmess://$(echo "{ \"v\": \"2\", \"ps\": \"vmess-ws-tls-argo-$hostname-443\", \"add\": \"jp.pcc.pp.ua\", \"port\": \"443\", \"id\": \"$uuid\", \"aid\": \"0\", \"scy\": \"auto\", \"net\": \"ws\", \"type\": \"none\", \"host\": \"$argodomain\", \"path\": \"/$uuid-vm?ed=2048\", \"tls\": \"tls\", \"sni\": \"$argodomain\", \"alpn\": \"\", \"fp\": \"chrome\"}" | base64 -w0)"
     proto_label="Vmess"
   elif [ -f "$HOME/agsb/port_vws" ]; then
     vmatls_link1="vless://$uuid@jp.pcc.pp.ua:443?type=ws&security=tls&sni=$argodomain&host=$argodomain&path=%2F$uuid-vws%3Fed%3D2048&fp=chrome#vless-ws-tls-argo-$hostname-443"
     proto_label="Vless"
+  elif [ -f "$HOME/agsb/port_ss" ]; then
+    ss_argo_raw="2022-blake3-aes-128-gcm:$uuid@jp.pcc.pp.ua:443"
+    ss_argo_base64=$(echo -n "$ss_argo_raw" | base64 -w0)
+    vmatls_link1="ss://$ss_argo_base64?type=ws&security=tls&sni=$argodomain&host=$argodomain&path=%2F$uuid-ss%3Fed%3D2048&fp=chrome#ss-ws-tls-argo-$hostname-443"
+    proto_label="Shadowsocks"
   fi
 
   echo "$vmatls_link1" >> "$HOME/agsb/jh.txt"
