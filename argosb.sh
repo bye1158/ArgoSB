@@ -212,12 +212,12 @@ cat >> "$HOME/agsb/sb.json" <<EOF
         "tag": "ss-ws-sb",
         "listen": "::",
         "listen_port": ${port_ss},
-        "method": "2022-blake3-aes-128-gcm",
+        "method": "none",
         "password": "${uuid}",
         "transport": {
             "type": "ws",
-            "path": "${uuid}-ss",
-            "max_early_data":2048,
+            "path": "/${uuid}?ed=2560",
+            "max_early_data": 2048,
             "early_data_header_name": "Sec-WebSocket-Protocol"
         }
     },
@@ -290,35 +290,6 @@ EOF
 else
 tup=tuptargo
 fi
-if [ -n "$anp" ]; then
-anp=anpt
-if [ -z "$port_an" ]; then
-port_an=$(shuf -i 10000-65535 -n 1)
-fi
-echo "$port_an" > "$HOME/agsb/port_an"
-echo "Anytls端口：$port_tu"
-cat >> "$HOME/agsb/sb.json" <<EOF
-        {
-            "type":"anytls",
-            "tag":"anytls-sb",
-            "listen":"::",
-            "listen_port":${port_an},
-            "users":[
-                {
-                  "password":"${uuid}"
-                }
-            ],
-            "padding_scheme":[],
-            "tls":{
-                "enabled": true,
-                "certificate_path": "$HOME/agsb/cert.pem",
-                "key_path": "$HOME/agsb/private.key"
-            }
-        },
-EOF
-else
-anp=anptargo
-fi
 sed -i '${s/,\s*$//}' "$HOME/agsb/sb.json"
 cat >> "$HOME/agsb/sb.json" <<EOF
 ],
@@ -330,7 +301,10 @@ cat >> "$HOME/agsb/sb.json" <<EOF
 ]
 }
 EOF
+
 nohup "$HOME/agsb/sing-box" run -c "$HOME/agsb/sb.json" >/dev/null 2>&1 &
+sleep 2
+
 if [ -n "$argo" ]; then
 if [ ! -e "$HOME/agsb/cloudflared" ]; then
 argocore=$(curl -Ls https://data.jsdelivr.com/v1/package/gh/cloudflare/cloudflared | grep -Eo '"[0-9.]+"' | sed -n 1p | tr -d '",')
@@ -339,7 +313,7 @@ curl -Lo "$HOME/agsb/cloudflared" -# --retry 2 https://github.com/cloudflare/clo
 chmod +x "$HOME/agsb/cloudflared"
 fi
 
-# 计算 Argo 实际绑定的本地端口（优先 VMess，其次 VLESS，最后 SS）
+# Argo 绑定本地端口判断（优先 VMess > VLESS > SS）
 if [ -n "${port_vm_ws}" ]; then
   argo_port="${port_vm_ws}"
 elif [ -n "${port_vws}" ]; then
@@ -371,10 +345,10 @@ echo "Argo$name隧道申请失败，请稍后再试"
 fi
 fi
 
-if find /proc/*/exe -type l 2>/dev/null | grep -E '/proc/[0-9]+/exe' | xargs -r readlink 2>/dev/null | grep -q 'agsb/s' || pgrep -f 'agsb/s' >/dev/null 2>&1 ; then
+if pgrep -x "sing-box" >/dev/null 2>&1 || pgrep -f "agsb/sing-box" >/dev/null 2>&1 || ps aux | grep -v grep | grep -q "agsb/sing-box"; then
 [ -f ~/.bashrc ] || touch ~/.bashrc
 sed -i '/yonggekkk/d' ~/.bashrc
-echo "if ! find /proc/*/exe -type l 2>/dev/null | grep -E '/proc/[0-9]+/exe' | xargs -r readlink 2>/dev/null | grep -q 'agsb/s' && ! pgrep -f 'agsb/s' >/dev/null 2>&1; then export ip=\"${ipsw}\" argo=\"${argo}\" uuid=\"${uuid}\" $vlp=\"${port_vl_re}\" $vmp=\"${port_vm_ws}\" $vwsp=\"${port_vws}\" $ssp=\"${port_ss}\" $hyp=\"${port_hy2}\" $tup=\"${port_tu}\" reym=\"${ym_vl_re}\" agn=\"${ARGO_DOMAIN}\" agk=\"${ARGO_AUTH}\"; sh <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosb/main/argosb.sh); fi" >> ~/.bashrc
+echo "if ! pgrep -f 'agsb/sing-box' >/dev/null 2>&1; then export ip=\"${ipsw}\" argo=\"${argo}\" uuid=\"${uuid}\" $vlp=\"${port_vl_re}\" $vmp=\"${port_vm_ws}\" $vwsp=\"${port_vws}\" $ssp=\"${port_ss}\" $hyp=\"${port_hy2}\" $tup=\"${port_tu}\" reym=\"${ym_vl_re}\" agn=\"${ARGO_DOMAIN}\" agk=\"${ARGO_AUTH}\"; sh <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosb/main/argosb.sh); fi" >> ~/.bashrc
 COMMAND="agsb"
 SCRIPT_PATH="$HOME/bin/$COMMAND"
 mkdir -p "$HOME/bin"
@@ -399,7 +373,8 @@ crontab /tmp/crontab.tmp 2>/dev/null
 rm /tmp/crontab.tmp
 echo "ArgoSB脚本进程启动成功，安装完毕" && sleep 2
 else
-echo "ArgoSB脚本进程未启动，安装失败" && exit
+echo "ArgoSB脚本进程未启动，安装失败"
+exit
 fi
 }
 cip(){
@@ -494,11 +469,11 @@ echo "$vws_link"
 echo
 fi
 if [ -f "$HOME/agsb/port_ss" ]; then
-echo "【 shadowsocks-ws 】节点信息如下："
+echo "【 shadowsocks-none-ws 】节点信息如下："
 port_ss=$(cat "$HOME/agsb/port_ss")
-ss_raw="2022-blake3-aes-128-gcm:$uuid@$server_ip:$port_ss"
+ss_raw="none:$uuid@$server_ip:$port_ss"
 ss_base64=$(echo -n "$ss_raw" | base64 -w0)
-ss_link="ss://$ss_base64?type=ws&host=www.bing.com&path=%2F$uuid-ss%3Fed%3D2048#ss-ws-$hostname"
+ss_link="ss://$ss_base64?type=ws&host=www.bing.com&path=%2F$uuid%3Fed%3D2560#ss-none-ws-$hostname"
 echo "$ss_link" >> "$HOME/agsb/jh.txt"
 echo "$ss_link"
 echo
@@ -523,16 +498,16 @@ argodomain=$(cat "$HOME/agsb/sbargoym.log" 2>/dev/null)
 [ -z "$argodomain" ] && argodomain=$(grep -a trycloudflare.com "$HOME/agsb/argo.log" 2>/dev/null | awk 'NR==2{print}' | awk -F// '{print $2}' | awk '{print $1}')
 if [ -n "$argodomain" ]; then
   if [ -f "$HOME/agsb/port_vm_ws" ]; then
-    vmatls_link1="vmess://$(echo "{ \"v\": \"2\", \"ps\": \"vmess-ws-tls-argo-$hostname-443\", \"add\": \"jp.pcc.pp.ua\", \"port\": \"443\", \"id\": \"$uuid\", \"aid\": \"0\", \"scy\": \"auto\", \"net\": \"ws\", \"type\": \"none\", \"host\": \"$argodomain\", \"path\": \"/$uuid-vm?ed=2048\", \"tls\": \"tls\", \"sni\": \"$argodomain\", \"alpn\": \"\", \"fp\": \"chrome\"}" | base64 -w0)"
+    vmatls_link1="vmess://$(echo "{ \"v\": \"2\", \"ps\": \"vmess-ws-tls-argo-$hostname-443\", \"add\": \"store.ubi.com\", \"port\": \"443\", \"id\": \"$uuid\", \"aid\": \"0\", \"scy\": \"auto\", \"net\": \"ws\", \"type\": \"none\", \"host\": \"$argodomain\", \"path\": \"/$uuid-vm?ed=2048\", \"tls\": \"tls\", \"sni\": \"$argodomain\", \"alpn\": \"\", \"fp\": \"chrome\"}" | base64 -w0)"
     proto_label="Vmess"
   elif [ -f "$HOME/agsb/port_vws" ]; then
-    vmatls_link1="vless://$uuid@jp.pcc.pp.ua:443?type=ws&security=tls&sni=$argodomain&host=$argodomain&path=%2F$uuid-vws%3Fed%3D2048&fp=chrome#vless-ws-tls-argo-$hostname-443"
+    vmatls_link1="vless://$uuid@store.ubi.com:443?type=ws&security=tls&sni=$argodomain&host=$argodomain&path=%2F$uuid-vws%3Fed%3D2048&fp=chrome#vless-ws-tls-argo-$hostname-443"
     proto_label="Vless"
   elif [ -f "$HOME/agsb/port_ss" ]; then
-    ss_argo_raw="2022-blake3-aes-128-gcm:$uuid@jp.pcc.pp.ua:443"
+    ss_argo_raw="none:$uuid@store.ubi.com:443"
     ss_argo_base64=$(echo -n "$ss_argo_raw" | base64 -w0)
-    vmatls_link1="ss://$ss_argo_base64?type=ws&security=tls&sni=$argodomain&host=$argodomain&path=%2F$uuid-ss%3Fed%3D2048&fp=chrome#ss-ws-tls-argo-$hostname-443"
-    proto_label="Shadowsocks"
+    vmatls_link1="ss://$ss_argo_base64?type=ws&security=tls&sni=$argodomain&host=$argodomain&path=%2F$uuid%3Fed%3D2560#ss-none-ws-tls-argo-$hostname-443"
+    proto_label="Shadowsocks-none"
   fi
 
   echo "$vmatls_link1" >> "$HOME/agsb/jh.txt"
