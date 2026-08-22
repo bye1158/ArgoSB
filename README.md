@@ -25,6 +25,7 @@
 | 1、启用vless-reality（TCP） | vlpt | 端口指定 | 关闭vless | 端口随机 | 必选之一 |
 | 2、启用vmess（TCP） | vmpt | 端口指定 | 关闭vmess | 端口随机 | 必选之一 |
 | 3、启用vless（TCP） | vwspt | 端口指定 | 关闭vmess | 端口随机 | 必选之一 |
+| 3、启用shadowsocks（TCP） | sspt | 端口指定 | 关闭vmess | 端口随机 | 必选之一 |
 | 4、启用hy2（UDP） | hypt | 端口指定 | 关闭hy2 | 端口随机 | 必选之一 |
 | 5、启用tuic（UDP） | tupt | 端口指定 | 关闭tuic | 端口随机 | 必选之一 |
 | 6、argo开关 | argo | 填写y | 关闭argo隧道 | 关闭argo隧道 | 可选，填写y时，vmess变量vmpt必须启用 |
@@ -36,7 +37,6 @@
 | 12、【仅docker】监听端口，网页查询 | PORT | 端口指定 | 3000 | 3000 | 可选 |
 | 13、【仅docker】启用vless-ws-tls | DOMAIN | 服务器域名 | 关闭vless-ws-tls | 关闭vless-ws-tls | 可选，vless-ws-tls可独立存在，uuid变量必须启用 |
 
-![fdb76495fab11507148086c94d06453](https://github.com/user-attachments/assets/368cfe37-e215-4149-b6dd-4b295672a965)
 
 #### 使用argosb镜像注意：1、uuid变量都加上，重启后uuid不变。2、点击restart重启，即可自动更新镜像
 
@@ -66,6 +66,10 @@ vlpt="" vmpt="" hypt="" tupt="" argo="y" agn="" agk="" bash <(curl -Ls https://r
 vless
 ```
 uuid="" vwspt="8001" argo="y" agn="" agk="" bash <(curl -Ls https://raw.githubusercontent.com/bye1158/ArgoSB/main/argosb.sh)
+```
+shadowsocks
+```
+uuid="" sspt="8001" argo="y" agn="" agk="" bash <(curl -Ls https://raw.githubusercontent.com/bye1158/ArgoSB/main/argosb.sh)
 ```
 
 vmess
