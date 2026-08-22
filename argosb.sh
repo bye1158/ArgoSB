@@ -31,7 +31,7 @@ echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo "甬哥Github项目 ：github.com/yonggekkk"
 echo "甬哥Blogger博客 ：ygkkk.blogspot.com"
 echo "甬哥YouTube频道 ：www.youtube.com/@ygkkk"
-echo "ArgoSB一键无交互脚本 (Xray 内核版 - 直导修复版)"
+echo "ArgoSB一键无交互脚本 (Xray 内核版)"
 echo "当前版本：25.6.18-xray"
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 hostname=$(uname -a | awk '{print $2}')
@@ -233,20 +233,22 @@ echo "ArgoSB (Xray) 脚本输出节点配置如下："
 echo
 
 if [ -f "$HOME/agsb/port_ss" ]; then
-echo "【 VLESS-WS 直连节点 (支持 v2rayN 完美导入) 】："
+echo "【 Shadowsocks (none + WS) 直连节点 】："
 port_ss=$(cat "$HOME/agsb/port_ss")
-# 改用 VLESS 替代 SS-none，服务端配置完全一致但 v2rayN 解析 100% 正确
-vless_direct_link="vless://$uuid@$server_ip:$port_ss?type=ws&host=www.bing.com&path=%2F$uuid%3Fed%3D2560&encryption=none#vless-ws-$hostname"
-echo "$vless_direct_link" >> "$HOME/agsb/jh.txt"
-echo "$vless_direct_link"
+ss_raw="none:$uuid@$server_ip:$port_ss"
+ss_base64=$(echo -n "$ss_raw" | base64 -w0)
+ss_link="ss://$ss_base64?type=ws&host=www.bing.com&path=%2F$uuid%3Fed%3D2560#ss-none-ws-$hostname"
+echo "$ss_link" >> "$HOME/agsb/jh.txt"
+echo "$ss_link"
 echo
 fi
 
 argodomain=$(cat "$HOME/agsb/sbargoym.log" 2>/dev/null)
 [ -z "$argodomain" ] && argodomain=$(grep -a trycloudflare.com "$HOME/agsb/argo.log" 2>/dev/null | awk 'NR==2{print}' | awk -F// '{print $2}' | awk '{print $1}')
 if [ -n "$argodomain" ]; then
-  # 转换为 VLESS-WS-TLS 格式，能够完美带入所有的 TLS/SNI/Host/Path 字段
-  vmatls_link1="vless://$uuid@store.ubi.com:443?type=ws&security=tls&sni=$argodomain&host=$argodomain&path=%2F$uuid%3Fed%3D2560&encryption=none#vless-ws-tls-argo-$hostname-443"
+  ss_argo_raw="none:$uuid@store.ubi.com:443"
+  ss_argo_base64=$(echo -n "$ss_argo_raw" | base64 -w0)
+  vmatls_link1="ss://$ss_argo_base64?type=ws&security=tls&sni=$argodomain&host=$argodomain&path=%2F$uuid%3Fed%3D2560#ss-none-ws-tls-argo-$hostname-443"
 
   echo "$vmatls_link1" >> "$HOME/agsb/jh.txt"
 
@@ -254,7 +256,7 @@ if [ -n "$argodomain" ]; then
   if [ -n "$sbtk" ]; then
     nametn="当前Argo固定隧道token：$sbtk"
   fi
-  argoshow=$(echo "Argo隧道转发本地端口：${argo_port}\n当前Argo$name域名：$argodomain\n$nametn\n443端口的 vless-ws-tls-argo 节点 (可直接导入 v2rayN)：\n$vmatls_link1\n")
+  argoshow=$(echo "Argo隧道转发本地端口：${argo_port}\n当前Argo$name域名：$argodomain\n$nametn\n443端口的 Shadowsocks-none-ws-tls-argo 节点：\n$vmatls_link1\n")
 fi
 echo "---------------------------------------------------------"
 echo -e "$argoshow"
