@@ -25,7 +25,6 @@
 | 1、启用vless-reality（TCP） | vlpt | 端口指定 | 关闭vless | 端口随机 | 必选之一 |
 | 2、启用vmess（TCP） | vmpt | 端口指定 | 关闭vmess | 端口随机 | 必选之一 |
 | 3、启用vless（TCP） | vwspt | 端口指定 | 关闭vmess | 端口随机 | 必选之一 |
-| 3、启用shadowsocks（TCP） | sspt | 端口指定 | 关闭vmess | 端口随机 | 必选之一 |
 | 4、启用hy2（UDP） | hypt | 端口指定 | 关闭hy2 | 端口随机 | 必选之一 |
 | 5、启用tuic（UDP） | tupt | 端口指定 | 关闭tuic | 端口随机 | 必选之一 |
 | 6、argo开关 | argo | 填写y | 关闭argo隧道 | 关闭argo隧道 | 可选，填写y时，vmess变量vmpt必须启用 |
@@ -66,10 +65,6 @@ vlpt="" vmpt="" hypt="" tupt="" argo="y" agn="" agk="" bash <(curl -Ls https://r
 vless
 ```
 uuid="" vwspt="8001" argo="y" agn="" agk="" bash <(curl -Ls https://raw.githubusercontent.com/bye1158/ArgoSB/main/argosb.sh)
-```
-shadowsocks
-```
-uuid="" sspt="8001" argo="y" agn="" agk="" bash <(curl -Ls https://raw.githubusercontent.com/bye1158/ArgoSB/main/argosb.sh)
 ```
 
 vmess
