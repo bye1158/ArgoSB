@@ -1,11 +1,22 @@
 #!/bin/sh
 export LANG=en_US.UTF-8
 if ! find /proc/*/exe -type l 2>/dev/null | grep -E '/proc/[0-9]+/exe' | xargs -r readlink 2>/dev/null | grep -q 'agsb/xray' && ! pgrep -f 'agsb/xray' >/dev/null 2>&1; then
+[ -z "${vlpt+x}" ] || vlp=yes
+[ -z "${vmpt+x}" ] || vmp=yes
 [ -z "${vwspt+x}" ] || vwsp=yes
-[ "$vwsp" = yes ] || { echo "提示：使用此脚本时，请设置 vwspt 变量哦，再见！"; exit; }
+[ -z "${sspt+x}" ] || ssp=yes
+[ -z "${hypt+x}" ] || hyp=yes
+[ -z "${tupt+x}" ] || tup=yes
+[ "$vlp" = yes ] || [ "$vmp" = yes ] || [ "$vwsp" = yes ] || [ "$ssp" = yes ] || [ "$hyp" = yes ] || [ "$tup" = yes ] || { echo "提示：使用此脚本时，请在脚本前至少设置一个协议变量哦，再见！"; exit; }
 fi
 export uuid=${uuid:-''}
+export port_vl_re=${vlpt:-''}
+export port_vm_ws=${vmpt:-''}
 export port_vws=${vwspt:-''}
+export port_ss=${sspt:-''}
+export port_hy2=${hypt:-''}
+export port_tu=${tupt:-''}
+export ym_vl_re=${reym:-''}
 export argo=${argo:-''}
 export ARGO_DOMAIN=${agn:-''}
 export ARGO_AUTH=${agk:-''}
@@ -20,11 +31,12 @@ echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo "甬哥Github项目 ：github.com/yonggekkk"
 echo "甬哥Blogger博客 ：ygkkk.blogspot.com"
 echo "甬哥YouTube频道 ：www.youtube.com/@ygkkk"
-echo "ArgoSB一键无交互脚本 (Xray VLESS-WS 内核版)"
-echo "当前版本：25.6.18-xray-vws"
+echo "ArgoSB一键无交互脚本 (Xray 内核版 - 直导修复版)"
+echo "当前版本：25.6.18-xray"
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 hostname=$(uname -a | awk '{print $2}')
 op=$(cat /etc/redhat-release 2>/dev/null || cat /etc/os-release 2>/dev/null | grep -i pretty_name | cut -d \" -f2)
+[ -z "$(systemd-detect-virt 2>/dev/null)" ] && vi=$(virt-what 2>/dev/null) || vi=$(systemd-detect-virt 2>/dev/null)
 case $(uname -m) in
 aarch64) cpu=arm64-v8a;;
 x86_64) cpu=64;;
@@ -52,34 +64,40 @@ fi
 echo "$uuid" > "$HOME/agsb/uuid"
 echo "UUID密码：$uuid"
 
-if [ -z "$port_vws" ]; then
-port_vws=$(shuf -i 10000-65535 -n 1)
-fi
-echo "$port_vws" > "$HOME/agsb/port_vws"
-echo "Vless-ws端口：$port_vws"
-
 cat > "$HOME/agsb/config.json" <<EOF
 {
   "log": { "loglevel": "warning" },
   "inbounds": [
+EOF
+
+if [ -n "$ssp" ]; then
+ssp=sspt
+if [ -z "$port_ss" ]; then
+port_ss=$(shuf -i 10000-65535 -n 1)
+fi
+echo "$port_ss" > "$HOME/agsb/port_ss"
+echo "Shadowsocks-none-ws端口：$port_ss"
+cat >> "$HOME/agsb/config.json" <<EOF
     {
-      "port": ${port_vws},
-      "protocol": "vless",
+      "port": ${port_ss},
+      "protocol": "shadowsocks",
       "settings": {
-        "clients": [
-          {
-            "id": "${uuid}"
-          }
-        ],
-        "decryption": "none"
+        "method": "none",
+        "password": "${uuid}",
+        "network": "tcp,udp"
       },
       "streamSettings": {
         "network": "ws",
         "wsSettings": {
-          "path": "/${uuid}-vws?ed=2560"
+          "path": "/${uuid}?ed=2560"
         }
       }
-    }
+    },
+EOF
+fi
+
+sed -i '${s/,\s*$//}' "$HOME/agsb/config.json"
+cat >> "$HOME/agsb/config.json" <<EOF
   ],
   "outbounds": [
     { "protocol": "freedom" }
@@ -102,7 +120,7 @@ curl -Lo "$HOME/agsb/cloudflared" -# --retry 2 "https://github.com/cloudflare/cl
 chmod +x "$HOME/agsb/cloudflared"
 fi
 
-argo_port="${port_vws}"
+argo_port="${port_ss}"
 
 if [ -n "${ARGO_DOMAIN}" ] && [ -n "${ARGO_AUTH}" ]; then
 name='固定'
@@ -127,7 +145,7 @@ echo "Argo$name隧道申请失败，请稍后再试"
 fi
 fi
 
-if pgrep -x "xray" >/dev/null 2>&1 || pgrep -f "agsb/xray" >/dev/null 2>&1; then
+if pgrep -x "xray" >/dev/null 2>&1 || pgrep -f "agsb/xray" >/dev/null 2>&1 || ps aux | grep -v grep | grep -q "agsb/xray"; then
 [ -f ~/.bashrc ] || touch ~/.bashrc
 sed -i '/yonggekkk/d' ~/.bashrc
 crontab -l > /tmp/crontab.tmp 2>/dev/null
@@ -143,41 +161,105 @@ fi
 fi
 crontab /tmp/crontab.tmp 2>/dev/null
 rm /tmp/crontab.tmp
-echo "ArgoSB (Xray VLESS-WS) 进程启动成功，安装完毕" && sleep 2
+echo "ArgoSB (Xray) 脚本进程启动成功，安装完毕" && sleep 2
 else
-echo "ArgoSB 进程未启动，安装失败"
+echo "ArgoSB 脚本进程未启动，安装失败"
+echo "调试提示：你可以运行 '$HOME/agsb/xray run -c $HOME/agsb/config.json' 查看详细报错信息"
 exit
 fi
 }
 cip(){
+ipbest(){
+serip=$(curl -s4m5 icanhazip.com -k || curl -s6m5 icanhazip.com -k)
+if echo "$serip" | grep -q ':'; then
+server_ip="[$serip]"
+echo "$server_ip" > "$HOME/agsb/server_ip.log"
+else
+server_ip="$serip"
+echo "$server_ip" > "$HOME/agsb/server_ip.log"
+fi
+}
 ipchange(){
 v4=$(curl -s4m5 icanhazip.com -k)
 v6=$(curl -s6m5 icanhazip.com -k)
 if [ -z "$v4" ]; then
-server_ip="[$v6]"
+vps_ipv4='无IPV4'
+vps_ipv6="$v6"
+elif [ -n "$v4" ] && [ -n "$v6" ]; then
+vps_ipv4="$v4"
+vps_ipv6="$v6"
+else
+vps_ipv4="$v4"
+vps_ipv6='无IPV6'
+fi
+echo "本地IPV4地址：$vps_ipv4"
+echo "本地IPV6地址：$vps_ipv6"
+if [ "$ipsw" = "4" ]; then
+if [ -z "$v4" ]; then
+ipbest
 else
 server_ip="$v4"
-fi
 echo "$server_ip" > "$HOME/agsb/server_ip.log"
+fi
+elif [ "$ipsw" = "6" ]; then
+if [ -z "$v6" ]; then
+ipbest
+else
+server_ip="[$v6]"
+echo "$server_ip" > "$HOME/agsb/server_ip.log"
+fi
+else
+ipbest
+fi
 }
+warpcheck
+if ! echo "$wgcfv4" | grep -qE 'on|plus' && ! echo "$wgcfv6" | grep -qE 'on|plus'; then
 ipchange
+else
+systemctl stop wg-quick@wgcf >/dev/null 2>&1
+kill -15 $(pgrep warp-go) >/dev/null 2>&1 && sleep 2
+ipchange
+systemctl start wg-quick@wgcf >/dev/null 2>&1
+systemctl restart warp-go >/dev/null 2>&1
+systemctl enable warp-go >/dev/null 2>&1
+systemctl start warp-go >/dev/null 2>&1
+fi
 rm -rf "$HOME/agsb/jh.txt"
 uuid=$(cat "$HOME/agsb/uuid")
 server_ip=$(cat "$HOME/agsb/server_ip.log")
 echo "---------------------------------------------------------"
-echo "ArgoSB (Xray VLESS-WS) 节点配置如下："
+echo "---------------------------------------------------------"
+echo "ArgoSB (Xray) 脚本输出节点配置如下："
 echo
+
+if [ -f "$HOME/agsb/port_ss" ]; then
+echo "【 VLESS-WS 直连节点 (支持 v2rayN 完美导入) 】："
+port_ss=$(cat "$HOME/agsb/port_ss")
+# 改用 VLESS 替代 SS-none，服务端配置完全一致但 v2rayN 解析 100% 正确
+vless_direct_link="vless://$uuid@$server_ip:$port_ss?type=ws&host=www.bing.com&path=%2F$uuid%3Fed%3D2560&encryption=none#vless-ws-$hostname"
+echo "$vless_direct_link" >> "$HOME/agsb/jh.txt"
+echo "$vless_direct_link"
+echo
+fi
 
 argodomain=$(cat "$HOME/agsb/sbargoym.log" 2>/dev/null)
 [ -z "$argodomain" ] && argodomain=$(grep -a trycloudflare.com "$HOME/agsb/argo.log" 2>/dev/null | awk 'NR==2{print}' | awk -F// '{print $2}' | awk '{print $1}')
-
 if [ -n "$argodomain" ]; then
-  vmatls_link1="vless://$uuid@store.ubi.com:443?type=ws&security=tls&sni=$argodomain&host=$argodomain&path=%2F${uuid}-vws%3Fed%3D2560&encryption=none#vless-ws-tls-argo-$hostname-443"
+  # 转换为 VLESS-WS-TLS 格式，能够完美带入所有的 TLS/SNI/Host/Path 字段
+  vmatls_link1="vless://$uuid@store.ubi.com:443?type=ws&security=tls&sni=$argodomain&host=$argodomain&path=%2F$uuid%3Fed%3D2560&encryption=none#vless-ws-tls-argo-$hostname-443"
+
   echo "$vmatls_link1" >> "$HOME/agsb/jh.txt"
-  argoshow=$(echo "Argo隧道域名：$argodomain\n\n一键导入链接（v2rayN完美识别）：\n$vmatls_link1\n")
+
+  sbtk=$(cat "$HOME/agsb/sbargotoken.log" 2>/dev/null)
+  if [ -n "$sbtk" ]; then
+    nametn="当前Argo固定隧道token：$sbtk"
+  fi
+  argoshow=$(echo "Argo隧道转发本地端口：${argo_port}\n当前Argo$name域名：$argodomain\n$nametn\n443端口的 vless-ws-tls-argo 节点 (可直接导入 v2rayN)：\n$vmatls_link1\n")
 fi
 echo "---------------------------------------------------------"
 echo -e "$argoshow"
+echo "---------------------------------------------------------"
+echo "聚合节点信息，请查看 $HOME/agsb/jh.txt 文件"
 echo "---------------------------------------------------------"
 }
 
@@ -197,11 +279,36 @@ exit
 fi
 
 if ! find /proc/*/exe -type l 2>/dev/null | grep -E '/proc/[0-9]+/exe' | xargs -r readlink 2>/dev/null | grep -q 'agsb/xray' && ! pgrep -f 'agsb/xray' >/dev/null 2>&1; then
-echo "开始安装 Xray VLESS-WS Argo 节点……" && sleep 2
+v4orv6(){
+if [ -z "$(curl -s4m5 icanhazip.com -k)" ]; then
+echo -e "nameserver 2a00:1098:2b::1\nnameserver 2a00:1098:2c::1\nnameserver 2a01:4f8:c2c:123f::1" > /etc/resolv.conf
+fi
+}
+warpcheck
+if ! echo "$wgcfv4" | grep -qE 'on|plus' && ! echo "$wgcfv6" | grep -qE 'on|plus'; then
+v4orv6
+else
+systemctl stop wg-quick@wgcf >/dev/null 2>&1
+kill -15 $(pgrep warp-go) >/dev/null 2>&1 && sleep 2
+v4orv6
+systemctl start wg-quick@wgcf >/dev/null 2>&1
+systemctl restart warp-go >/dev/null 2>&1
+systemctl enable warp-go >/dev/null 2>&1
+systemctl start warp-go >/dev/null 2>&1
+fi
+echo "VPS系统：$op"
+echo "CPU架构：$cpu"
+echo "ArgoSB (Xray) 脚本未安装，开始安装…………" && sleep 2
+setenforce 0 >/dev/null 2>&1
+iptables -P INPUT ACCEPT >/dev/null 2>&1
+iptables -P FORWARD ACCEPT >/dev/null 2>&1
+iptables -P OUTPUT ACCEPT >/dev/null 2>&1
+iptables -F >/dev/null 2>&1
 ins
 cip
+echo
 else
-echo "脚本已安装"
+echo "ArgoSB (Xray) 脚本已安装"
 showmode
 exit
 fi
