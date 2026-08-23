@@ -1,6 +1,12 @@
 #!/bin/sh
 export LANG=en_US.UTF-8
-if ! find /proc/*/exe -type l 2>/dev/null | grep -E '/proc/[0-9]+/exe' | xargs -r readlink 2>/dev/null | grep -q 'agsb/s' && ! pgrep -f 'agsb/s' >/dev/null 2>&1; then
+
+# 检测进程的统一函数
+is_running() {
+    pgrep -f "$HOME/agsb/sing-box" >/dev/null 2>&1 || pgrep -f "agsb/sing-box" >/dev/null 2>&1
+}
+
+if ! is_running; then
 [ -z "${vlpt+x}" ] || vlp=yes
 [ -z "${vmpt+x}" ] || vmp=yes
 [ -z "${vwspt+x}" ] || vwsp=yes
@@ -8,6 +14,7 @@ if ! find /proc/*/exe -type l 2>/dev/null | grep -E '/proc/[0-9]+/exe' | xargs -
 [ -z "${tupt+x}" ] || tup=yes
 [ "$vlp" = yes ] || [ "$vmp" = yes ] || [ "$vwsp" = yes ] || [ "$hyp" = yes ] || [ "$tup" = yes ] || { echo "提示：使用此脚本时，请在脚本前至少设置一个协议变量哦，再见！"; exit; }
 fi
+
 export uuid=${uuid:-''}
 export port_vl_re=${vlpt:-''}
 export port_vm_ws=${vmpt:-''}
@@ -19,19 +26,22 @@ export argo=${argo:-''}
 export ARGO_DOMAIN=${agn:-''}
 export ARGO_AUTH=${agk:-''}
 export ipsw=${ip:-''}
+
 showmode(){
 echo "显示节点信息：agsb或者脚本 list"
 echo "双栈VPS显示IPv4节点配置：ip=4 agsb或者脚本 list"
 echo "双栈VPS显示IPv6节点配置：ip=6 agsb或者脚本 list"
 echo "卸载脚本：agsb或者脚本 del"
 }
+
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo "甬哥Github项目 ：github.com/yonggekkk"
 echo "甬哥Blogger博客 ：ygkkk.blogspot.com"
 echo "甬哥YouTube频道 ：www.youtube.com/@ygkkk"
 echo "ArgoSB一键无交互脚本"
-echo "当前版本：25.6.18"
+echo "当前版本：25.6.18 (修复进程匹配逻辑)"
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+
 hostname=$(uname -a | awk '{print $2}')
 op=$(cat /etc/redhat-release 2>/dev/null || cat /etc/os-release 2>/dev/null | grep -i pretty_name | cut -d \" -f2)
 [ -z "$(systemd-detect-virt 2>/dev/null)" ] && vi=$(virt-what 2>/dev/null) || vi=$(systemd-detect-virt 2>/dev/null)
@@ -41,10 +51,12 @@ x86_64) cpu=amd64;;
 *) echo "目前脚本不支持$(uname -m)架构" && exit
 esac
 mkdir -p "$HOME/agsb"
+
 warpcheck(){
 wgcfv6=$(curl -s6m5 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
 wgcfv4=$(curl -s4m5 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
 }
+
 ins(){
 if [ ! -e "$HOME/agsb/sing-box" ]; then
 curl -Lo "$HOME/agsb/sing-box" -# --retry 2 https://github.com/yonggekkk/ArgoSB/releases/download/argosbx/sing-box-$cpu
@@ -52,6 +64,7 @@ chmod +x "$HOME/agsb/sing-box"
 sbcore=$("$HOME/agsb/sing-box" version 2>/dev/null | awk '/version/{print $NF}')
 echo "已安装Sing-box正式版内核：$sbcore"
 fi
+
 cat > "$HOME/agsb/sb.json" <<EOF
 {
 "log": {
@@ -61,25 +74,25 @@ cat > "$HOME/agsb/sb.json" <<EOF
   },
   "inbounds": [
 EOF
+
 if [ -z "$uuid" ]; then
 uuid=$("$HOME/agsb/sing-box" generate uuid)
 fi
 echo "$uuid" > "$HOME/agsb/uuid"
 echo "UUID密码：$uuid"
+
 command -v openssl >/dev/null 2>&1 && openssl ecparam -genkey -name prime256v1 -out "$HOME/agsb/private.key" >/dev/null 2>&1
 command -v openssl >/dev/null 2>&1 && openssl req -new -x509 -days 36500 -key "$HOME/agsb/private.key" -out "$HOME/agsb/cert.pem" -subj "/CN=www.bing.com" >/dev/null 2>&1
+
 if [ ! -f "$HOME/agsb/private.key" ]; then
 curl -Lso "$HOME/agsb/private.key" https://github.com/yonggekkk/ArgoSB/releases/download/argosbx/private.key
 curl -Lso "$HOME/agsb/cert.pem" https://github.com/yonggekkk/ArgoSB/releases/download/argosbx/cert.pem
 fi
+
 if [ -n "$vlp" ]; then
 vlp=vlpt
-if [ -z "$port_vl_re" ]; then
-port_vl_re=$(shuf -i 10000-65535 -n 1)
-fi
-if [ -z "$ym_vl_re" ]; then
-ym_vl_re=www.yahoo.com
-fi
+if [ -z "$port_vl_re" ]; then port_vl_re=$(shuf -i 10000-65535 -n 1); fi
+if [ -z "$ym_vl_re" ]; then ym_vl_re=www.yahoo.com; fi
 echo "$port_vl_re" > "$HOME/agsb/port_vl_re"
 echo "$ym_vl_re" > "$HOME/agsb/ym_vl_re"
 if [ ! -e "$HOME/agsb/private_key" ]; then
@@ -111,7 +124,7 @@ cat >> "$HOME/agsb/sb.json" <<EOF
       "tls": {
         "enabled": true,
         "server_name": "${ym_vl_re}",
-          "reality": {
+        "reality": {
           "enabled": true,
           "handshake": {
             "server": "${ym_vl_re}",
@@ -126,15 +139,14 @@ EOF
 else
 vlp=vlptargo
 fi
+
 if [ -n "$vmp" ]; then
 vmp=vmpt
-if [ -z "$port_vm_ws" ]; then
-port_vm_ws=$(shuf -i 10000-65535 -n 1)
-fi
+if [ -z "$port_vm_ws" ]; then port_vm_ws=$(shuf -i 10000-65535 -n 1); fi
 echo "$port_vm_ws" > "$HOME/agsb/port_vm_ws"
 echo "Vmess-ws端口：$port_vm_ws"
 cat >> "$HOME/agsb/sb.json" <<EOF
-{
+    {
         "type": "vmess",
         "tag": "vmess-sb",
         "listen": "::",
@@ -147,30 +159,29 @@ cat >> "$HOME/agsb/sb.json" <<EOF
         ],
         "transport": {
             "type": "ws",
-            "path": "${uuid}-vm",
-            "max_early_data":2048,
+            "path": "/${uuid}-vm",
+            "max_early_data": 2048,
             "early_data_header_name": "Sec-WebSocket-Protocol"
         },
-        "tls":{
-                "enabled": false,
-                "server_name": "www.bing.com",
-                "certificate_path": "$HOME/agsb/cert.pem",
-                "key_path": "$HOME/agsb/private.key"
-            }
+        "tls": {
+            "enabled": false,
+            "server_name": "www.bing.com",
+            "certificate_path": "$HOME/agsb/cert.pem",
+            "key_path": "$HOME/agsb/private.key"
+        }
     },
 EOF
 else
 vmp=vmptargo
 fi
+
 if [ -n "$vwsp" ]; then
 vwsp=vwspt
-if [ -z "$port_vws" ]; then
-port_vws=$(shuf -i 10000-65535 -n 1)
-fi
+if [ -z "$port_vws" ]; then port_vws=$(shuf -i 10000-65535 -n 1); fi
 echo "$port_vws" > "$HOME/agsb/port_vws"
 echo "Vless-ws端口：$port_vws"
 cat >> "$HOME/agsb/sb.json" <<EOF
-{
+    {
         "type": "vless",
         "tag": "vless-ws-sb",
         "listen": "::",
@@ -182,26 +193,25 @@ cat >> "$HOME/agsb/sb.json" <<EOF
         ],
         "transport": {
             "type": "ws",
-            "path": "${uuid}-vws",
-            "max_early_data":2048,
+            "path": "/${uuid}-vws",
+            "max_early_data": 2048,
             "early_data_header_name": "Sec-WebSocket-Protocol"
         },
-        "tls":{
-                "enabled": false,
-                "server_name": "www.bing.com",
-                "certificate_path": "$HOME/agsb/cert.pem",
-                "key_path": "$HOME/agsb/private.key"
-            }
+        "tls": {
+            "enabled": false,
+            "server_name": "www.bing.com",
+            "certificate_path": "$HOME/agsb/cert.pem",
+            "key_path": "$HOME/agsb/private.key"
+        }
     },
 EOF
 else
 vwsp=vwsptargo
 fi
+
 if [ -n "$hyp" ]; then
 hyp=hypt
-if [ -z "$port_hy2" ]; then
-port_hy2=$(shuf -i 10000-65535 -n 1)
-fi
+if [ -z "$port_hy2" ]; then port_hy2=$(shuf -i 10000-65535 -n 1); fi
 echo "$port_hy2" > "$HOME/agsb/port_hy2"
 echo "Hysteria-2端口：$port_hy2"
 cat >> "$HOME/agsb/sb.json" <<EOF
@@ -215,7 +225,7 @@ cat >> "$HOME/agsb/sb.json" <<EOF
                 "password": "${uuid}"
             }
         ],
-        "ignore_client_bandwidth":false,
+        "ignore_client_bandwidth": false,
         "tls": {
             "enabled": true,
             "alpn": [
@@ -229,80 +239,56 @@ EOF
 else
 hyp=hyptargo
 fi
+
 if [ -n "$tup" ]; then
 tup=tupt
-if [ -z "$port_tu" ]; then
-port_tu=$(shuf -i 10000-65535 -n 1)
-fi
+if [ -z "$port_tu" ]; then port_tu=$(shuf -i 10000-65535 -n 1); fi
 echo "$port_tu" > "$HOME/agsb/port_tu"
 echo "Tuic-v5端口：$port_tu"
 cat >> "$HOME/agsb/sb.json" <<EOF
-        {
-            "type":"tuic",
-            "tag": "tuic5-sb",
-            "listen": "::",
-            "listen_port": ${port_tu},
-            "users": [
-                {
-                    "uuid": "${uuid}",
-                    "password": "${uuid}"
-                }
-            ],
-            "congestion_control": "bbr",
-            "tls":{
-                "enabled": true,
-                "alpn": [
-                    "h3"
-                ],
-                "certificate_path": "$HOME/agsb/cert.pem",
-                "key_path": "$HOME/agsb/private.key"
+    {
+        "type": "tuic",
+        "tag": "tuic5-sb",
+        "listen": "::",
+        "listen_port": ${port_tu},
+        "users": [
+            {
+                "uuid": "${uuid}",
+                "password": "${uuid}"
             }
-        },
+        ],
+        "congestion_control": "bbr",
+        "tls": {
+            "enabled": true,
+            "alpn": [
+                "h3"
+            ],
+            "certificate_path": "$HOME/agsb/cert.pem",
+            "key_path": "$HOME/agsb/private.key"
+        }
+    },
 EOF
 else
 tup=tuptargo
 fi
-if [ -n "$anp" ]; then
-anp=anpt
-if [ -z "$port_an" ]; then
-port_an=$(shuf -i 10000-65535 -n 1)
-fi
-echo "$port_an" > "$HOME/agsb/port_an"
-echo "Anytls端口：$port_tu"
-cat >> "$HOME/agsb/sb.json" <<EOF
-        {
-            "type":"anytls",
-            "tag":"anytls-sb",
-            "listen":"::",
-            "listen_port":${port_an},
-            "users":[
-                {
-                  "password":"${uuid}"
-                }
-            ],
-            "padding_scheme":[],
-            "tls":{
-                "enabled": true,
-                "certificate_path": "$HOME/agsb/cert.pem",
-                "key_path": "$HOME/agsb/private.key"
-            }
-        },
-EOF
-else
-anp=anptargo
-fi
+
+# 清理末尾多余逗号
 sed -i '${s/,\s*$//}' "$HOME/agsb/sb.json"
+
 cat >> "$HOME/agsb/sb.json" <<EOF
 ],
 "outbounds": [
-{
-"type":"direct",
-"tag":"direct"
-}
+  {
+    "type": "direct",
+    "tag": "direct"
+  }
 ]
 }
 EOF
+
+pkill -f "agsb/sing-box" >/dev/null 2>&1
 nohup "$HOME/agsb/sing-box" run -c "$HOME/agsb/sb.json" >/dev/null 2>&1 &
+
 if [ -n "$argo" ]; then
 if [ ! -e "$HOME/agsb/cloudflared" ]; then
 argocore=$(curl -Ls https://data.jsdelivr.com/v1/package/gh/cloudflare/cloudflared | grep -Eo '"[0-9.]+"' | sed -n 1p | tr -d '",')
@@ -311,8 +297,9 @@ curl -Lo "$HOME/agsb/cloudflared" -# --retry 2 https://github.com/cloudflare/clo
 chmod +x "$HOME/agsb/cloudflared"
 fi
 
-# 计算 Argo 实际绑定的本地端口（优先 VMess，其次 VLESS）
 argo_port="${port_vm_ws:-$port_vws}"
+
+pkill -f "agsb/cloudflared" >/dev/null 2>&1
 
 if [ -n "${ARGO_DOMAIN}" ] && [ -n "${ARGO_AUTH}" ]; then
 name='固定'
@@ -337,10 +324,13 @@ echo "Argo$name隧道申请失败，请稍后再试"
 fi
 fi
 
-if find /proc/*/exe -type l 2>/dev/null | grep -E '/proc/[0-9]+/exe' | xargs -r readlink 2>/dev/null | grep -q 'agsb/s' || pgrep -f 'agsb/s' >/dev/null 2>&1 ; then
+# 给出 3 秒缓冲区等待 backend 线程建立
+sleep 3
+
+if is_running; then
 [ -f ~/.bashrc ] || touch ~/.bashrc
 sed -i '/yonggekkk/d' ~/.bashrc
-echo "if ! find /proc/*/exe -type l 2>/dev/null | grep -E '/proc/[0-9]+/exe' | xargs -r readlink 2>/dev/null | grep -q 'agsb/s' && ! pgrep -f 'agsb/s' >/dev/null 2>&1; then export ip=\"${ipsw}\" argo=\"${argo}\" uuid=\"${uuid}\" $vlp=\"${port_vl_re}\" $vmp=\"${port_vm_ws}\" $vwsp=\"${port_vws}\" $hyp=\"${port_hy2}\" $tup=\"${port_tu}\" reym=\"${ym_vl_re}\" agn=\"${ARGO_DOMAIN}\" agk=\"${ARGO_AUTH}\"; sh <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosb/main/argosb.sh); fi" >> ~/.bashrc
+echo "if ! pgrep -f 'agsb/sing-box' >/dev/null 2>&1; then export ip=\"${ipsw}\" argo=\"${argo}\" uuid=\"${uuid}\" $vlp=\"${port_vl_re}\" $vmp=\"${port_vm_ws}\" $vwsp=\"${port_vws}\" $hyp=\"${port_hy2}\" $tup=\"${port_tu}\" reym=\"${ym_vl_re}\" agn=\"${ARGO_DOMAIN}\" agk=\"${ARGO_AUTH}\"; sh <(curl -Ls https://raw.githubusercontent.com/yonggekkk/argosb/main/argosb.sh); fi" >> ~/.bashrc
 COMMAND="agsb"
 SCRIPT_PATH="$HOME/bin/$COMMAND"
 mkdir -p "$HOME/bin"
@@ -365,9 +355,12 @@ crontab /tmp/crontab.tmp 2>/dev/null
 rm /tmp/crontab.tmp
 echo "ArgoSB脚本进程启动成功，安装完毕" && sleep 2
 else
-echo "ArgoSB脚本进程未启动，安装失败" && exit
+echo "ArgoSB脚本进程未启动，安装失败。详细配置报错如下："
+"$HOME/agsb/sing-box" check -c "$HOME/agsb/sb.json"
+exit
 fi
 }
+
 cip(){
 ipbest(){
 serip=$(curl -s4m5 icanhazip.com -k || curl -s6m5 icanhazip.com -k)
@@ -395,19 +388,9 @@ fi
 echo "本地IPV4地址：$vps_ipv4"
 echo "本地IPV6地址：$vps_ipv6"
 if [ "$ipsw" = "4" ]; then
-if [ -z "$v4" ]; then
-ipbest
-else
-server_ip="$v4"
-echo "$server_ip" > "$HOME/agsb/server_ip.log"
-fi
+if [ -z "$v4" ]; then ipbest; else server_ip="$v4"; echo "$server_ip" > "$HOME/agsb/server_ip.log"; fi
 elif [ "$ipsw" = "6" ]; then
-if [ -z "$v6" ]; then
-ipbest
-else
-server_ip="[$v6]"
-echo "$server_ip" > "$HOME/agsb/server_ip.log"
-fi
+if [ -z "$v6" ]; then ipbest; else server_ip="[$v6]"; echo "$server_ip" > "$HOME/agsb/server_ip.log"; fi
 else
 ipbest
 fi
@@ -478,7 +461,6 @@ fi
 argodomain=$(cat "$HOME/agsb/sbargoym.log" 2>/dev/null)
 [ -z "$argodomain" ] && argodomain=$(grep -a trycloudflare.com "$HOME/agsb/argo.log" 2>/dev/null | awk 'NR==2{print}' | awk -F// '{print $2}' | awk '{print $1}')
 if [ -n "$argodomain" ]; then
-  # 优先针对 VMess，若无则使用 VLESS 生成 Argo 节点
   if [ -f "$HOME/agsb/port_vm_ws" ]; then
     vmatls_link1="vmess://$(echo "{ \"v\": \"2\", \"ps\": \"vmess-ws-tls-argo-$hostname-443\", \"add\": \"jp.pcc.pp.ua\", \"port\": \"443\", \"id\": \"$uuid\", \"aid\": \"0\", \"scy\": \"auto\", \"net\": \"ws\", \"type\": \"none\", \"host\": \"$argodomain\", \"path\": \"/$uuid-vm?ed=2048\", \"tls\": \"tls\", \"sni\": \"$argodomain\", \"alpn\": \"\", \"fp\": \"chrome\"}" | base64 -w0)"
     proto_label="Vmess"
@@ -507,8 +489,8 @@ echo
 }
 
 if [ "$1" = "del" ]; then
-for P in /proc/[0-9]*; do if [ -L "$P/exe" ]; then TARGET=$(readlink -f "$P/exe" 2>/dev/null); if echo "$TARGET" | grep -qE '/agsb/c|/agsb/s'; then PID=$(basename "$P"); kill "$PID" 2>/dev/null && echo "Killed $PID ($TARGET)" || echo "Could not kill $PID ($TARGET)"; fi; fi; done
-kill -15 $(pgrep -f 'agsb/s' 2>/dev/null) $(pgrep -f 'agsb/c' 2>/dev/null) >/dev/null 2>&1
+pkill -f 'agsb/sing-box' >/dev/null 2>&1
+pkill -f 'agsb/cloudflared' >/dev/null 2>&1
 sed -i '/yonggekkk/d' ~/.bashrc
 sed -i '/export PATH="\$HOME\/bin:\$PATH"/d' ~/.bashrc
 . ~/.bashrc
@@ -518,20 +500,6 @@ sed -i '/agsb\/cloudflared/d' /tmp/crontab.tmp
 crontab /tmp/crontab.tmp 2>/dev/null
 rm /tmp/crontab.tmp
 rm -rf "$HOME/agsb" "$HOME/bin/agsb"
-
-kill -15 $(cat /etc/s-box-ag/sbargopid.log 2>/dev/null) >/dev/null 2>&1
-kill -15 $(cat /etc/s-box-ag/sbpid.log 2>/dev/null) >/dev/null 2>&1
-kill -15 $(cat nixag/sbargopid.log 2>/dev/null) >/dev/null 2>&1
-kill -15 $(cat nixag/sbpid.log 2>/dev/null) >/dev/null 2>&1
-crontab -l > /tmp/crontab.tmp 2>/dev/null
-sed -i '/sbargopid/d' /tmp/crontab.tmp
-sed -i '/sbpid/d' /tmp/crontab.tmp
-crontab /tmp/crontab.tmp 2>/dev/null
-rm /tmp/crontab.tmp
-rm -rf /etc/s-box-ag /usr/bin/agsb
-sed -i '/yonggekkk/d' ~/.bashrc
-. ~/.bashrc
-rm -rf nixag
 echo "卸载完成"
 exit
 elif [ "$1" = "list" ]; then
@@ -539,26 +507,7 @@ cip
 exit
 fi
 
-if ! find /proc/*/exe -type l 2>/dev/null | grep -E '/proc/[0-9]+/exe' | xargs -r readlink 2>/dev/null | grep -q 'agsb/s' && ! pgrep -f 'agsb/s' >/dev/null 2>&1; then
-for P in /proc/[0-9]*; do if [ -L "$P/exe" ]; then TARGET=$(readlink -f "$P/exe" 2>/dev/null); if echo "$TARGET" | grep -qE '/agsb/c|/agsb/s'; then PID=$(basename "$P"); kill "$PID" 2>/dev/null && echo "Killed $PID ($TARGET)" || echo "Could not kill $PID ($TARGET)"; fi; fi; done
-kill -15 $(pgrep -f 'agsb/s' 2>/dev/null) $(pgrep -f 'agsb/c' 2>/dev/null) >/dev/null 2>&1
-v4orv6(){
-if [ -z "$(curl -s4m5 icanhazip.com -k)" ]; then
-echo -e "nameserver 2a00:1098:2b::1\nnameserver 2a00:1098:2c::1\nnameserver 2a01:4f8:c2c:123f::1" > /etc/resolv.conf
-fi
-}
-warpcheck
-if ! echo "$wgcfv4" | grep -qE 'on|plus' && ! echo "$wgcfv6" | grep -qE 'on|plus'; then
-v4orv6
-else
-systemctl stop wg-quick@wgcf >/dev/null 2>&1
-kill -15 $(pgrep warp-go) >/dev/null 2>&1 && sleep 2
-v4orv6
-systemctl start wg-quick@wgcf >/dev/null 2>&1
-systemctl restart warp-go >/dev/null 2>&1
-systemctl enable warp-go >/dev/null 2>&1
-systemctl start warp-go >/dev/null 2>&1
-fi
+if ! is_running; then
 echo "VPS系统：$op"
 echo "CPU架构：$cpu"
 echo "ArgoSB脚本未安装，开始安装…………" && sleep 2
@@ -567,7 +516,6 @@ iptables -P INPUT ACCEPT >/dev/null 2>&1
 iptables -P FORWARD ACCEPT >/dev/null 2>&1
 iptables -P OUTPUT ACCEPT >/dev/null 2>&1
 iptables -F >/dev/null 2>&1
-netfilter-persistent save >/dev/null 2>&1
 ins
 cip
 echo
