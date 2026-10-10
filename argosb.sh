@@ -52,7 +52,7 @@ printf 'iptables-persistent iptables-persistent/autosave_v4 boolean true\niptabl
 apt update >/dev/null 2>&1 && apt install -y busybox coreutils util-linux iptables iptables-persistent cron openssl systemd-resolved >/dev/null 2>&1
 systemctl enable --now systemd-resolved >/dev/null 2>&1
 fi
-touch sbx_update
+touch sb_update
 fi
 fi
 warpcheck(){
