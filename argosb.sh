@@ -40,7 +40,21 @@ aarch64) cpu=arm64;;
 x86_64) cpu=amd64;;
 *) echo "目前脚本不支持$(uname -m)架构" && exit
 esac
+if [ "$1" != "del" ]; then
 mkdir -p "$HOME/agsb"
+if [ ! -f sb_update ]; then
+echo "执行必要的脚本依赖中，请稍等10秒……"
+if command -v apk >/dev/null 2>&1; then
+apk update >/dev/null 2>&1 && apk add --no-cache bash busybox-extras gcompat libc6-compat iptables openssl >/dev/null 2>&1
+elif command -v apt >/dev/null 2>&1; then
+export DEBIAN_FRONTEND=noninteractive
+printf 'iptables-persistent iptables-persistent/autosave_v4 boolean true\niptables-persistent iptables-persistent/autosave_v6 boolean true\n' | debconf-set-selections
+apt update >/dev/null 2>&1 && apt install -y busybox coreutils util-linux iptables iptables-persistent cron openssl systemd-resolved >/dev/null 2>&1
+systemctl enable --now systemd-resolved >/dev/null 2>&1
+fi
+touch sbx_update
+fi
+fi
 warpcheck(){
 wgcfv6=$(curl -s6m5 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
 wgcfv4=$(curl -s4m5 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
